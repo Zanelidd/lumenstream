@@ -1,0 +1,17 @@
+<div class="panel">
+  <header>
+    <span
+      [class.connected]="connected$ | async"
+      [class.disconnected]="!(connected$ | async)"
+    >
+      {{ (connected$ | async) ? '● En ligne' : '○ Hors ligne' }}
+    </span>
+    @if (latest$ | async; as m) {
+      <span class="reading">{{ m.value }} mW</span>
+    }
+  </header>
+
+  <div class="chart-wrapper">
+    <canvas #canvas></canvas>
+  </div>
+</div>
