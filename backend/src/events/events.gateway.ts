@@ -1,35 +1,28 @@
 import {
-  OnGatewayConnection,
-  OnGatewayDisconnect,
   OnGatewayInit,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
+import { OnModuleDestroy } from '@nestjs/common';
+import { Subscription } from 'rxjs';
+import { SimulatorService } from '../simulator/simulator.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class EventsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class EventsGateway implements OnGatewayInit, OnModuleDestroy {
   @WebSocketServer()
   server: Server;
 
-  afterInit() {
-    let count = 0;
-    setInterval(() => {
-      this.server.emit('measurement', {
-        count: count++,
-        value: Number((100 + Math.random() * 10 - 5).toFixed(2)),
-        timestamp: Date.now(),
-      });
-    }, 1000);
-    console.log('WebSocket gateway ready, emission started.');
-  }
-  handleConnection(client: Socket) {
-    console.log(`Client connected : ${client.id}`);
-  }
+  private sub?: Subscription;
 
-  handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+  constructor(private readonly simulator: SimulatorService) {}
+
+  afterInit() {
+    this.sub = this.simulator.measurements$.subscribe((m) =>
+      this.server.emit('measurement', m),
+    );
+  }
+  onModuleDestroy() {
+    this.sub?.unsubscribe();
   }
 }
