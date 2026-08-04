@@ -13,16 +13,23 @@ export class EventsGateway implements OnGatewayInit, OnModuleDestroy {
   @WebSocketServer()
   server: Server;
 
-  private sub?: Subscription;
+  private measSub?: Subscription;
+  private alertSub?: Subscription;
 
   constructor(private readonly simulator: SimulatorService) {}
 
   afterInit() {
-    this.sub = this.simulator.measurements$.subscribe((m) =>
+    this.measSub = this.simulator.measurements$.subscribe((m) =>
       this.server.emit('measurement', m),
     );
+
+    this.alertSub = this.simulator.alert$.subscribe((a) =>
+      this.server.emit('alert', a),
+    );
   }
+
   onModuleDestroy() {
-    this.sub?.unsubscribe();
+    this.measSub?.unsubscribe();
+    this.alertSub?.unsubscribe();
   }
 }
